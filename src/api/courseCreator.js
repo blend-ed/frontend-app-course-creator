@@ -59,7 +59,7 @@ export const createCourse = async (requestData) => {
     // Validate available_components if provided
     if (requestData.available_components) {
       const validComponents = [
-        'html', 'video', 'problem_multiple_choice', 'problem_checkboxes',
+        'html', 'video', 'problem_multiple_choice', 'problem_checkbox',
         'problem_dropdown', 'problem_numeric', 'problem_text', 'image'
       ];
       const invalidComponents = requestData.available_components.filter(
