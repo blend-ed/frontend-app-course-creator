@@ -565,14 +565,12 @@ const AICourseCreator = () => {
 
   // Show initial simple topic input screen
   return (
-    <Container className="py-5">
-      <HeroSection
-        courseTopic={courseTopic}
-        setCourseTopic={setCourseTopic}
-        handleTopicSubmit={handleTopicSubmit}
-        handleKeyDown={handleKeyDown}
-      />
-    </Container>
+    <HeroSection
+      courseTopic={courseTopic}
+      setCourseTopic={setCourseTopic}
+      handleTopicSubmit={handleTopicSubmit}
+      handleKeyDown={handleKeyDown}
+    />
   );
 };
 

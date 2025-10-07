@@ -46,9 +46,12 @@ const Navigation = () => {
 };
 
 const App = () => {
+  const location = useLocation();
+  const showNavigation = location.pathname !== '/';
+
   return (
     <>
-      <Navigation />
+      {showNavigation && <Navigation />}
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/history" element={<History />} />
