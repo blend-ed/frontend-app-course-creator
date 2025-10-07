@@ -178,7 +178,9 @@ Ready to generate your course?`;
     // Handle different steps
     switch (currentStep) {
       case 'pending-task':
-        if (response === 'Start Over') {
+        if (response === 'Retry') {
+          handleGenerateCourse();
+        } else if (response === 'Start Over') {
           handleCancel();
         }
         // "View Progress" is already handled above in special options

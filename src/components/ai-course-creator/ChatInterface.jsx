@@ -287,16 +287,19 @@ const ChatInterface = ({
     }
 
     const showAIDecideButton = !['document', 'components', 'assessmentTypes', 'pending-task'].includes(currentStep);
+    const showSkipButton = !['pending-task'].includes(currentStep);
 
     return (
       <Stack direction="horizontal" gap={2} className="flex-wrap">
-        <Button
-          variant="outline-secondary"
-          onClick={() => chatHandlers.handleChatResponse('Skip')}
-          size="sm"
-        >
-          Skip
-        </Button>
+        {showSkipButton && (
+          <Button
+            variant="outline-secondary"
+            onClick={() => chatHandlers.handleChatResponse('Skip')}
+            size="sm"
+          >
+            Skip
+          </Button>
+        )}
         {showAIDecideButton && (
           <Button
             variant="outline-primary"

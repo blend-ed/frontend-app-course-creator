@@ -216,8 +216,8 @@ const AICourseCreator = () => {
           setChatMessages(prev => prev.filter(msg => !msg.isGenerating).concat([
             {
               type: 'assistant',
-              content: 'I found that a course generation is already in progress. You can check the progress of the ongoing task, or start over with a new topic.',
-              options: ['View Progress', 'Start Over']
+              content: 'I found that a course generation is already in progress. You can retry creating the structure, check the progress of the ongoing task, or start over with a new topic.',
+              options: ['Retry', 'View Progress', 'Start Over']
             }
           ]));
 
@@ -388,8 +388,8 @@ const AICourseCreator = () => {
           setChatMessages(prev => [...prev,
           {
             type: 'assistant',
-            content: 'I found that a course generation is already in progress. You can check the progress of the ongoing task, or start over with a new topic.',
-            options: ['View Progress', 'Start Over']
+            content: 'I found that a course generation is already in progress. You can retry creating the structure, check the progress of the ongoing task, or start over with a new topic.',
+            options: ['Retry', 'View Progress', 'Start Over']
           }
           ]);
 
@@ -557,7 +557,7 @@ const AICourseCreator = () => {
           show={showGenerationModal}
           setShowGenerationModal={setShowGenerationModal}
           taskId={currentTaskId}
-          handleCancel={handleCancel}
+          handleCancel={() => setShowGenerationModal(false)}
         />
       </>
     );
