@@ -240,7 +240,7 @@ const ChatSidebar = ({
             {selectedCategories.References.map((item, index) => (
               <div key={index} className="d-flex align-items-center justify-content-between p-2 bg-white rounded border">
                 <div className="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
-                  <Icon src={FilePresent} />
+                  <Icon src={FilePresent} className="mr-2" />
                   <span className="small text-truncate">{item}</span>
                 </div>
                 <IconButton

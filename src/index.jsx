@@ -10,7 +10,7 @@ import ReactDOM from 'react-dom';
 import Header from '@edx/frontend-component-header';
 import Footer from '@edx/frontend-component-footer';
 import messages from './i18n';
-import { MainPage } from './pages';
+import App from './App';
 
 import './index.scss';
 
@@ -18,7 +18,7 @@ subscribe(APP_READY, () => {
   ReactDOM.render(
     <AppProvider>
       <Header />
-      <MainPage />
+      <App />
       <Footer />
     </AppProvider>,
     document.getElementById('root'),
