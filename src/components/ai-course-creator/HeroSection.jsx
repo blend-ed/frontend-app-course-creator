@@ -76,6 +76,7 @@ const HeroSection = ({
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
                 rows={4}
+                className="mr-0"
                 style={{
                   resize: 'none',
                   borderRadius: '12px',
