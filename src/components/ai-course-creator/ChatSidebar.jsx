@@ -1,15 +1,22 @@
-import { useState } from 'react';
-import { Dropdown, Stack, Icon, IconButton } from '@edx/paragon';
-import { Add, Close, Check } from '@edx/paragon/icons';
+import { useRef, useState } from 'react';
+import { Dropdown, Button, Stack, Icon, IconButton } from '@edx/paragon';
+import { Add, Close, FilePresent, Check } from '@edx/paragon/icons';
 import PropTypes from 'prop-types';
+import { deleteAttachment } from '../../api/attachments';
 
 const ChatSidebar = ({
   courseData,
+  attachedFiles,
+  setAttachedFiles,
   multiSelectState,
   setMultiSelectState,
   setCourseData,
+  onFileUpload,
+  documentPaths,
+  setDocumentPaths,
   currentStep
 }) => {
+  const fileInputRef = useRef(null);
   const [showComponentsDropdown, setShowComponentsDropdown] = useState(false);
   const [showAssessmentsDropdown, setShowAssessmentsDropdown] = useState(false);
 
@@ -37,10 +44,62 @@ const ChatSidebar = ({
     }));
   };
 
+  // Handle file removal
+  const handleFileRemoval = async (fileName) => {
+    // Find the attachment by filename
+    const attachment = attachedFiles.find(file => file.filename === fileName);
+    if (!attachment) {
+      console.error('Attachment not found:', fileName);
+      return;
+    }
+
+    try {
+      // Delete from server if we have an ID
+      if (attachment.id) {
+        await deleteAttachment(attachment.id);
+      }
+
+      // Remove from local state
+      const fileIndex = attachedFiles.findIndex(file => file.filename === fileName);
+      const newAttachedFiles = attachedFiles.filter(file => file.filename !== fileName);
+      setAttachedFiles(newAttachedFiles);
+
+      setCourseData(prev => ({
+        ...prev,
+        documents: prev.documents ? prev.documents.filter(doc => doc.filename !== fileName) : []
+      }));
+
+      // Remove file path
+      if (documentPaths && documentPaths.length > 0 && fileIndex !== -1 && fileIndex < documentPaths.length) {
+        const newDocumentPaths = [...documentPaths];
+        newDocumentPaths.splice(fileIndex, 1);
+        setDocumentPaths(newDocumentPaths);
+      }
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      // Still remove from local state even if API call fails
+      const fileIndex = attachedFiles.findIndex(file => file.filename === fileName);
+      const newAttachedFiles = attachedFiles.filter(file => file.filename !== fileName);
+      setAttachedFiles(newAttachedFiles);
+
+      setCourseData(prev => ({
+        ...prev,
+        documents: prev.documents ? prev.documents.filter(doc => doc.filename !== fileName) : []
+      }));
+
+      if (documentPaths && documentPaths.length > 0 && fileIndex !== -1 && fileIndex < documentPaths.length) {
+        const newDocumentPaths = [...documentPaths];
+        newDocumentPaths.splice(fileIndex, 1);
+        setDocumentPaths(newDocumentPaths);
+      }
+    }
+  };
+
   // Get selected options by category
   const getSelectedByCategory = () => {
     const categories = {
       Properties: [],
+      References: [],
       Assessments: [],
       Components: []
     };
@@ -52,6 +111,13 @@ const ChatSidebar = ({
       categories.Properties.push({ type: 'duration', value: displayValue });
     }
     if (courseData.difficulty) categories.Properties.push({ type: 'difficulty', value: courseData.difficulty });
+
+    if (attachedFiles.length > 0) {
+      attachedFiles.forEach(file => {
+        // Use filename property from attachment object
+        categories.References.push(file.filename || file.name);
+      });
+    }
 
     if (courseData.components && courseData.components.length > 0) {
       courseData.components.forEach(component => {
@@ -157,6 +223,39 @@ const ChatSidebar = ({
   return (
     <div className="border-start p-3" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
       <Stack gap={3}>
+        {/* References Section */}
+        <div>
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <h6 className="mb-0 fw-bold">References</h6>
+            <IconButton
+              src={Add}
+              iconAs={Icon}
+              alt="Add reference"
+              onClick={() => fileInputRef.current?.click()}
+              size="sm"
+              variant="light"
+            />
+          </div>
+          <Stack gap={2}>
+            {selectedCategories.References.map((item, index) => (
+              <div key={index} className="d-flex align-items-center justify-content-between p-2 bg-white rounded border">
+                <div className="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
+                  <Icon src={FilePresent} />
+                  <span className="small text-truncate">{item}</span>
+                </div>
+                <IconButton
+                  src={Close}
+                  iconAs={Icon}
+                  alt="Remove"
+                  onClick={() => handleFileRemoval(item)}
+                  size="sm"
+                  variant="light"
+                />
+              </div>
+            ))}
+          </Stack>
+        </div>
+
         {/* Properties Section */}
         {selectedCategories.Properties.length > 0 && (
           <div>
@@ -268,15 +367,33 @@ const ChatSidebar = ({
           </div>
         )}
       </Stack>
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.pptx,.docx"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0] && onFileUpload) {
+            onFileUpload(e.target.files[0]);
+          }
+        }}
+      />
     </div>
   );
 };
 
 ChatSidebar.propTypes = {
   courseData: PropTypes.object.isRequired,
+  attachedFiles: PropTypes.array.isRequired,
+  setAttachedFiles: PropTypes.func.isRequired,
   multiSelectState: PropTypes.object.isRequired,
   setMultiSelectState: PropTypes.func.isRequired,
   setCourseData: PropTypes.func.isRequired,
+  onFileUpload: PropTypes.func,
+  documentPaths: PropTypes.array,
+  setDocumentPaths: PropTypes.func,
   currentStep: PropTypes.string,
 };
 

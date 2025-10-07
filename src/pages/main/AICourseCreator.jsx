@@ -54,12 +54,14 @@ const AICourseCreator = () => {
   const [currentStep, setCurrentStep] = useState('topic');
   const [courseData, setCourseData] = useState({
     topic: '',
+    document: null,
     audience: '',
     duration: '',
     components: [],
     imageSource: '',
     videoSource: '',
     assessmentTypes: [],
+    documents: [],
     instructions: ''
   });
 
@@ -78,14 +80,13 @@ const AICourseCreator = () => {
   const [isResponseLoading, setIsResponseLoading] = useState(false);
 
   // File handling state
+  const [attachedFiles, setAttachedFiles] = useState([]);
+  const [documentPaths, setDocumentPaths] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
 
   // Modal and form state
   const [showGenerationModal, setShowGenerationModal] = useState(false);
-  const [approvalFormData, setApprovalFormData] = useState({
-    name: '',
-    workEmail: ''
-  });
+  const [currentTaskId, setCurrentTaskId] = useState(null);
 
   // Input handling
   const [regenerateComment, setRegenerateComment] = useState('');
@@ -119,9 +120,9 @@ const AICourseCreator = () => {
       setChatMode(true);
       setChatMessages([
         { type: 'user', content: `Create a course on "${courseTopic}".` },
-        { type: 'assistant', content: "Who's your course for? Pick a target audience or let me decide.", options: ['Beginners', 'Intermediate', 'Advanced', 'Let AI decide'] }
+        { type: 'assistant', content: 'Do you have a document (like a PDF or PPT) to base your course content on? This can help me generate it more accurately. You can drag and drop a file below or click to skip.' }
       ]);
-      setCurrentStep('audience');
+      setCurrentStep('document');
     }
   }, [courseTopic]);
 
@@ -164,6 +165,7 @@ const AICourseCreator = () => {
       if (hasMeaningfulValue(courseData.duration) || courseData.duration === 'ai-generated') payload.course_size = durationToCourseSize(courseData.duration);
       if (hasMeaningfulValue(courseData.imageSource)) payload.image_source = courseData.imageSource;
       if (hasMeaningfulValue(courseData.videoSource)) payload.video_source = courseData.videoSource;
+      if (documentPaths && documentPaths.length > 0) payload.attachment_paths = documentPaths;
       if (hasMeaningfulValue(courseData.instructions)) payload.instructions = courseData.instructions;
 
       const response = await createCourse(payload);
@@ -193,17 +195,45 @@ const AICourseCreator = () => {
       }
 
       console.error('Error creating course structure:', error);
-
-      let errorMessage = 'Something went wrong while generating your course. Please try again.';
+      console.error('Error response data:', error.response?.data);
 
       if (isMountedRef.current) {
-        setChatMessages(prev => prev.filter(msg => !msg.isGenerating).concat([
-          { type: 'error', content: errorMessage },
-          { type: 'assistant', content: 'Would you like to try generating the course again, or would you like to modify something first?', options: ['Try Again', 'Modify Course Setup', 'Start Over'] }
-        ]));
+        // Check if this is a "pending task" scenario
+        const errorData = error.response?.data;
+        console.log('Checking for pending task:', {
+          message: errorData?.message,
+          task_id: errorData?.task_id,
+          fullErrorData: errorData
+        });
 
-        setCurrentStep('generation-error');
-        setSubmitted(false);
+        if ((errorData?.message === 'AI course creation is already pending' ||
+          errorData?.message?.includes('already pending') ||
+          errorData?.error?.includes('already pending')) &&
+          errorData?.task_id) {
+          // Store the task_id for later use
+          setCurrentTaskId(errorData.task_id);
+
+          setChatMessages(prev => prev.filter(msg => !msg.isGenerating).concat([
+            {
+              type: 'assistant',
+              content: 'I found that a course generation is already in progress. You can check the progress of the ongoing task, or start over with a new topic.',
+              options: ['View Progress', 'Start Over']
+            }
+          ]));
+
+          setCurrentStep('pending-task');
+          setSubmitted(false); // Keep user in chat interface
+        } else {
+          let errorMessage = 'Something went wrong while generating your course. Please try again.';
+
+          setChatMessages(prev => prev.filter(msg => !msg.isGenerating).concat([
+            { type: 'error', content: errorMessage },
+            { type: 'assistant', content: 'Would you like to try generating the course again, or would you like to modify something first?', options: ['Try Again', 'Modify Course Setup', 'Start Over'] }
+          ]));
+
+          setCurrentStep('generation-error');
+          setSubmitted(false);
+        }
       }
     } finally {
       if (isMountedRef.current) {
@@ -211,7 +241,7 @@ const AICourseCreator = () => {
       }
       generationControllerRef.current = null;
     }
-  }, [isGenerating, courseData, hasMeaningfulValue]);
+  }, [isGenerating, courseData, documentPaths, hasMeaningfulValue]);
 
   const handleRegenerateStructure = useCallback(async () => {
     if (!regenerateComment.trim() || !isMountedRef.current) return;
@@ -245,6 +275,7 @@ const AICourseCreator = () => {
       if (hasMeaningfulValue(courseData.duration) || courseData.duration === 'ai-generated') payload.course_size = durationToCourseSize(courseData.duration);
       if (hasMeaningfulValue(courseData.imageSource)) payload.image_source = courseData.imageSource;
       if (hasMeaningfulValue(courseData.videoSource)) payload.video_source = courseData.videoSource;
+      if (documentPaths && documentPaths.length > 0) payload.attachment_paths = documentPaths;
 
       const response = await createCourse(payload);
 
@@ -296,52 +327,82 @@ const AICourseCreator = () => {
       }
       regenerationControllerRef.current = null;
     }
-  }, [regenerateComment, isResponseLoading, courseData, courseStructure, hasMeaningfulValue]);
+  }, [regenerateComment, isResponseLoading, courseData, courseStructure, documentPaths, hasMeaningfulValue]);
 
   const handleAnimationTriggered = useCallback(() => {
     setShouldAnimateStructure(false);
   }, []);
 
   const handleStructureApproval = useCallback(async (formData) => {
-    if (!courseStructure || !formData || !formData.name || !formData.workEmail || !isMountedRef.current) {
+    if (!courseStructure || !isMountedRef.current) {
       return;
     }
 
     try {
-      setApprovalFormData(formData);
-
       const payload = {
         action: 'create_content',
         topic: courseData.topic,
         course_structure: courseStructure,
         available_components: mapComponentsToApiFormat(courseData.components, courseData.assessmentTypes),
-        email: formData.workEmail,
-        name: formData.name,
       };
 
       if (hasMeaningfulValue(courseData.audience) || courseData.audience === 'Let AI decide') payload.audience = courseData.audience;
       if (hasMeaningfulValue(courseData.duration) || courseData.duration === 'ai-generated') payload.course_size = durationToCourseSize(courseData.duration);
       if (hasMeaningfulValue(courseData.imageSource)) payload.image_source = courseData.imageSource;
       if (hasMeaningfulValue(courseData.videoSource)) payload.video_source = courseData.videoSource;
+      if (documentPaths && documentPaths.length > 0) payload.attachment_paths = documentPaths;
       if (hasMeaningfulValue(courseData.instructions)) payload.instructions = courseData.instructions;
 
-      await createCourse(payload);
+      const response = await createCourse(payload);
 
       if (isMountedRef.current) {
+        // Extract task_id from response if available
+        const taskId = response.data?.task_id;
         setShowGenerationModal(true);
+        // Pass task_id to modal if available
+        if (taskId) {
+          setCurrentTaskId(taskId);
+        }
       }
 
     } catch (error) {
       console.error('Error submitting course for generation:', error);
+      console.error('Error response data:', error.response?.data);
 
       if (isMountedRef.current) {
-        setChatMessages(prev => [...prev,
-        { type: 'error', content: `Failed to submit course for generation: ${error.message}` },
-        { type: 'assistant', content: 'Would you like to try submitting again?', options: ['Try Again', 'Start Over'] }
-        ]);
+        // Check if this is a "pending task" scenario
+        const errorData = error.response?.data;
+        console.log('Checking for pending task in approval:', {
+          message: errorData?.message,
+          task_id: errorData?.task_id,
+          fullErrorData: errorData
+        });
+
+        if ((errorData?.message === 'AI course creation is already pending' ||
+          errorData?.message?.includes('already pending') ||
+          errorData?.error?.includes('already pending')) &&
+          errorData?.task_id) {
+          // Store the task_id for later use
+          setCurrentTaskId(errorData.task_id);
+
+          setChatMessages(prev => [...prev,
+          {
+            type: 'assistant',
+            content: 'I found that a course generation is already in progress. You can check the progress of the ongoing task, or start over with a new topic.',
+            options: ['View Progress', 'Start Over']
+          }
+          ]);
+
+          setCurrentStep('pending-task');
+        } else {
+          setChatMessages(prev => [...prev,
+          { type: 'error', content: `Failed to submit course for generation: ${error.message}` },
+          { type: 'assistant', content: 'Would you like to try submitting again?', options: ['Try Again', 'Start Over'] }
+          ]);
+        }
       }
     }
-  }, [courseData, courseStructure, hasMeaningfulValue]);
+  }, [courseData, courseStructure, documentPaths, hasMeaningfulValue]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -370,12 +431,14 @@ const AICourseCreator = () => {
     setCurrentStep('topic');
     setCourseData({
       topic: '',
+      document: null,
       audience: '',
       duration: '',
       components: [],
       imageSource: '',
       videoSource: '',
       assessmentTypes: [],
+      documents: [],
       instructions: ''
     });
     setMultiSelectState({
@@ -384,18 +447,22 @@ const AICourseCreator = () => {
       step: null
     });
     setSelectedOptions({});
+    setDocumentPaths(null);
+    setAttachedFiles([]);
     setCourseTopic('');
     setRegenerateComment('');
-    setApprovalFormData({
-      name: '',
-      workEmail: ''
-    });
   }, []);
+
+  const handleViewProgress = useCallback(() => {
+    if (currentTaskId) {
+      setShowGenerationModal(true);
+    }
+  }, [currentTaskId]);
 
   // Show structure view when course is generated
   if (submitted) {
     return (
-      <Container fluid className="py-4">
+      <Container fluid>
         <div className="d-flex gap-4" style={{ minHeight: '100vh' }}>
           <div style={{ flex: '1', maxWidth: '40%' }}>
             <ChatFlow
@@ -410,6 +477,10 @@ const AICourseCreator = () => {
               setMultiSelectState={setMultiSelectState}
               selectedOptions={selectedOptions}
               setSelectedOptions={setSelectedOptions}
+              documentPaths={documentPaths}
+              setDocumentPaths={setDocumentPaths}
+              attachedFiles={attachedFiles}
+              setAttachedFiles={setAttachedFiles}
               isGenerating={isGenerating}
               setIsGenerating={setIsGenerating}
               isUploading={isUploading}
@@ -431,8 +502,6 @@ const AICourseCreator = () => {
               isGenerating={isGenerating}
               isResponseLoading={isResponseLoading}
               handleStructureApproval={handleStructureApproval}
-              formData={approvalFormData}
-              setFormData={setApprovalFormData}
               triggerAnimation={shouldAnimateStructure}
               onAnimationTriggered={handleAnimationTriggered}
               isEditingStructure={isEditingStructure}
@@ -443,8 +512,7 @@ const AICourseCreator = () => {
         <GenerationProgressModal
           show={showGenerationModal}
           setShowGenerationModal={setShowGenerationModal}
-          topic={courseTopic}
-          email={approvalFormData.workEmail}
+          taskId={currentTaskId}
           handleCancel={handleCancel}
         />
       </Container>
@@ -454,31 +522,44 @@ const AICourseCreator = () => {
   // Show chat interface
   if (chatMode) {
     return (
-      <ChatFlow
-        courseTopic={courseTopic}
-        courseData={courseData}
-        setCourseData={setCourseData}
-        chatMessages={chatMessages}
-        setChatMessages={setChatMessages}
-        currentStep={currentStep}
-        setCurrentStep={setCurrentStep}
-        multiSelectState={multiSelectState}
-        setMultiSelectState={setMultiSelectState}
-        selectedOptions={selectedOptions}
-        setSelectedOptions={setSelectedOptions}
-        isGenerating={isGenerating}
-        setIsGenerating={setIsGenerating}
-        isUploading={isUploading}
-        setIsUploading={setIsUploading}
-        submitted={submitted}
-        setSubmitted={setSubmitted}
-        handleGenerateCourse={handleGenerateCourse}
-        handleCancel={handleCancel}
-        regenerateComment={regenerateComment}
-        setRegenerateComment={setRegenerateComment}
-        handleRegenerateStructure={handleRegenerateStructure}
-        isResponseLoading={isResponseLoading}
-      />
+      <>
+        <ChatFlow
+          courseTopic={courseTopic}
+          courseData={courseData}
+          setCourseData={setCourseData}
+          chatMessages={chatMessages}
+          setChatMessages={setChatMessages}
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
+          multiSelectState={multiSelectState}
+          setMultiSelectState={setMultiSelectState}
+          selectedOptions={selectedOptions}
+          setSelectedOptions={setSelectedOptions}
+          documentPaths={documentPaths}
+          setDocumentPaths={setDocumentPaths}
+          attachedFiles={attachedFiles}
+          setAttachedFiles={setAttachedFiles}
+          isGenerating={isGenerating}
+          setIsGenerating={setIsGenerating}
+          isUploading={isUploading}
+          setIsUploading={setIsUploading}
+          submitted={submitted}
+          setSubmitted={setSubmitted}
+          handleGenerateCourse={handleGenerateCourse}
+          handleCancel={handleCancel}
+          regenerateComment={regenerateComment}
+          setRegenerateComment={setRegenerateComment}
+          handleRegenerateStructure={handleRegenerateStructure}
+          isResponseLoading={isResponseLoading}
+          handleViewProgress={handleViewProgress}
+        />
+        <GenerationProgressModal
+          show={showGenerationModal}
+          setShowGenerationModal={setShowGenerationModal}
+          taskId={currentTaskId}
+          handleCancel={handleCancel}
+        />
+      </>
     );
   }
 

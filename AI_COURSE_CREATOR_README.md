@@ -80,8 +80,11 @@ src/pages/main/
 
 ### File Upload
 - Paragon Dropzone component
-- Support for PDF, PPTX, DOCX
+- Support for PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Excel (XLS/XLSX), Text (TXT/MD), RTF, CSV
+- Max file size: 50MB (up from 5MB)
 - Progress tracking
+- Server-side attachment management
+- Automatic cleanup on removal
 - Error handling with retry
 
 ### Course Structure Editing
@@ -107,12 +110,22 @@ src/pages/main/
 
 ### Endpoints
 
-1. **Document Upload**
+1. **Upload Attachment**
    ```
-   POST /api/course-creator/document
+   POST /blendxcoursecreator_enterprise/api/attachments/
    ```
+   - Supports: PDF, Word, PowerPoint, Excel, Text files
+   - Max size: 50MB
+   - Returns attachment object with ID, file_path, metadata
 
-2. **Create Structure**
+2. **Delete Attachment**
+   ```
+   DELETE /blendxcoursecreator_enterprise/api/attachments/<id>/
+   ```
+   - Removes attachment from server
+   - Used when user removes reference from sidebar
+
+3. **Create Structure**
    ```
    POST /api/course-creator/create
    Body: { action: 'create_structure', topic, available_components, ... }
@@ -140,10 +153,25 @@ src/pages/main/
 The app uses React hooks for state management:
 
 - **Course Data**: Topic, audience, duration, components, documents
+- **Attachment Data**: Array of attachment objects with ID, filename, file_path, file_size, file_type
+- **Document Paths**: Array of file paths for course creation API
 - **Chat State**: Messages, current step, selected options
 - **UI State**: Loading, uploading, editing states
 - **Multi-select**: Tracks temporary selections
 - **Generation**: Progress, structure, approval data
+
+### Attachment Object Structure
+```javascript
+{
+  id: 1,
+  filename: "course_materials.pdf",
+  file_path: "attachments/AI/123/att_a1b2c3d4.pdf",
+  file_size_mb: 1.0,
+  file_type: "application/pdf",
+  file_extension: "pdf",
+  created: "2025-01-27T10:30:00Z"
+}
+```
 
 ## Styling Approach
 
@@ -189,7 +217,7 @@ Only added where necessary:
 - `@edx/paragon` - UI component library
 - `react-beautiful-dnd` - Drag and drop
 - `@edx/frontend-platform` - OpenEdX integration
-- `axios` - HTTP client (via Paragon Dropzone)
+- `axios` - HTTP client (via Paragon Dropzone and @edx/frontend-platform)
 
 ### Optional Enhancements
 - Icon library for better visual feedback

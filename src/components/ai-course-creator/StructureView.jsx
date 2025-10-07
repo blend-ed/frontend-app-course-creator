@@ -3,7 +3,6 @@ import { Add, Delete, Edit, Check, Close } from '@edx/paragon/icons';
 import { useEffect, useState, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import PropTypes from 'prop-types';
-import ApprovalModal from './modals/ApprovalModal';
 
 // Utility function to generate unique IDs
 const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -57,8 +56,6 @@ const StructureView = ({
 }) => {
   const [editingItem, setEditingItem] = useState(null);
   const [editValue, setEditValue] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [isApprovalLoading, setIsApprovalLoading] = useState(false);
 
   // Ensure structure has unique IDs
   useEffect(() => {
@@ -91,6 +88,33 @@ const StructureView = ({
         const [movedSection] = sections.splice(source.index, 1);
         sections.splice(destination.index, 0, movedSection);
         newStructure.sections = sections;
+      } else if (type === 'subsection') {
+        // Extract section ID from droppable ID (format: "subsections-{sectionId}")
+        const sourceSectionId = source.droppableId.replace('subsections-', '');
+        const destSectionId = destination.droppableId.replace('subsections-', '');
+
+        // Find source and destination sections
+        const sourceSection = newStructure.sections.find(s => s.id === sourceSectionId);
+        const destSection = newStructure.sections.find(s => s.id === destSectionId);
+
+        if (sourceSection && destSection && sourceSection.subsections && destSection.subsections) {
+          // Moving within the same section
+          if (sourceSectionId === destSectionId) {
+            const subsections = Array.from(sourceSection.subsections);
+            const [movedSubsection] = subsections.splice(source.index, 1);
+            subsections.splice(destination.index, 0, movedSubsection);
+            sourceSection.subsections = subsections;
+          } else {
+            // Moving to a different section
+            const sourceSubsections = Array.from(sourceSection.subsections);
+            const [movedSubsection] = sourceSubsections.splice(source.index, 1);
+            sourceSection.subsections = sourceSubsections;
+
+            const destSubsections = Array.from(destSection.subsections);
+            destSubsections.splice(destination.index, 0, movedSubsection);
+            destSection.subsections = destSubsections;
+          }
+        }
       }
 
       setStructure(newStructure);
@@ -161,17 +185,6 @@ const StructureView = ({
     setStructure(newStructure);
   };
 
-  const handleApprove = async (formData) => {
-    setIsApprovalLoading(true);
-    try {
-      await handleStructureApproval(formData);
-      setShowModal(false);
-    } catch (error) {
-      console.error('Error approving structure:', error);
-    } finally {
-      setIsApprovalLoading(false);
-    }
-  };
 
   if (!structure || !structure.sections) {
     return (
@@ -186,7 +199,7 @@ const StructureView = ({
       <Stack gap={3}>
         <div className="d-flex justify-content-between align-items-center">
           <h3>Course Structure</h3>
-          <Button variant="primary" onClick={() => setShowModal(true)} disabled={isResponseLoading}>
+          <Button variant="primary" onClick={() => handleStructureApproval({})} disabled={isResponseLoading}>
             Approve & Generate
           </Button>
         </div>
@@ -199,70 +212,89 @@ const StructureView = ({
                   {structure.sections.map((section, sIndex) => (
                     <Draggable key={section.id} draggableId={section.id} index={sIndex}>
                       {(provided) => (
-                        <Card
+                        <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="shadow-sm"
                         >
-                          <Card.Header className="bg-primary text-white">
-                            {editingItem?.type === 'section' && editingItem?.id === section.id ? (
-                              <Stack direction="horizontal" gap={2}>
-                                <Form.Control
-                                  value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  autoFocus
-                                />
-                                <IconButton src={Check} iconAs={Icon} alt="Save" onClick={handleSave} />
-                                <IconButton src={Close} iconAs={Icon} alt="Cancel" onClick={() => setEditingItem(null)} />
-                              </Stack>
-                            ) : (
-                              <Stack direction="horizontal" gap={2} className="justify-content-between">
-                                <span className="fw-bold">Section {sIndex + 1}: {section.name}</span>
+                          <Card
+                            {...provided.dragHandleProps}
+                            className="shadow-sm"
+                          >
+                            <Card.Header className="bg-primary text-white">
+                              {editingItem?.type === 'section' && editingItem?.id === section.id ? (
                                 <Stack direction="horizontal" gap={2}>
-                                  <IconButton
-                                    src={Edit}
-                                    iconAs={Icon}
-                                    alt="Edit"
-                                    onClick={() => startEdit('section', section.id, section.name)}
-                                    variant="light"
-                                    size="sm"
+                                  <Form.Control
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    autoFocus
                                   />
-                                  <IconButton
-                                    src={Delete}
-                                    iconAs={Icon}
-                                    alt="Delete"
-                                    onClick={() => handleDelete('section', section.id)}
-                                    variant="light"
-                                    size="sm"
-                                  />
+                                  <IconButton src={Check} iconAs={Icon} alt="Save" onClick={handleSave} />
+                                  <IconButton src={Close} iconAs={Icon} alt="Cancel" onClick={() => setEditingItem(null)} />
                                 </Stack>
-                              </Stack>
-                            )}
-                          </Card.Header>
-                          <Card.Body>
-                            {section.subsections && section.subsections.length > 0 && (
-                              <Stack gap={2}>
-                                {section.subsections.map((subsection, ssIndex) => (
-                                  <div key={subsection.id} className="p-3 border rounded bg-light">
-                                    <div className="fw-bold mb-2">
-                                      {subsection.name}
-                                    </div>
-                                    {subsection.units && subsection.units.length > 0 && (
-                                      <Stack gap={1} className="ms-3">
-                                        {subsection.units.map((unit) => (
-                                          <div key={unit.id} className="small text-muted">
-                                            • {unit.name}
-                                          </div>
+                              ) : (
+                                <Stack direction="horizontal" gap={2} className="justify-content-between">
+                                  <span className="fw-bold">Section {sIndex + 1}: {section.name}</span>
+                                  <Stack direction="horizontal" gap={2}>
+                                    <IconButton
+                                      src={Edit}
+                                      iconAs={Icon}
+                                      alt="Edit"
+                                      onClick={() => startEdit('section', section.id, section.name)}
+                                      variant="light"
+                                      size="sm"
+                                    />
+                                    <IconButton
+                                      src={Delete}
+                                      iconAs={Icon}
+                                      alt="Delete"
+                                      onClick={() => handleDelete('section', section.id)}
+                                      variant="light"
+                                      size="sm"
+                                    />
+                                  </Stack>
+                                </Stack>
+                              )}
+                            </Card.Header>
+                            <Card.Body>
+                              {section.subsections && section.subsections.length > 0 && (
+                                <Droppable droppableId={`subsections-${section.id}`} type="subsection">
+                                  {(provided) => (
+                                    <div {...provided.droppableProps} ref={provided.innerRef}>
+                                      <Stack gap={2}>
+                                        {section.subsections.map((subsection, ssIndex) => (
+                                          <Draggable key={subsection.id} draggableId={subsection.id} index={ssIndex}>
+                                            {(provided) => (
+                                              <div
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                className="p-3 border rounded bg-light"
+                                              >
+                                                <div className="fw-bold mb-2">
+                                                  {subsection.name}
+                                                </div>
+                                                {subsection.units && subsection.units.length > 0 && (
+                                                  <Stack gap={1} className="ms-3">
+                                                    {subsection.units.map((unit) => (
+                                                      <div key={unit.id} className="small text-muted">
+                                                        • {unit.name}
+                                                      </div>
+                                                    ))}
+                                                  </Stack>
+                                                )}
+                                              </div>
+                                            )}
+                                          </Draggable>
                                         ))}
+                                        {provided.placeholder}
                                       </Stack>
-                                    )}
-                                  </div>
-                                ))}
-                              </Stack>
-                            )}
-                          </Card.Body>
-                        </Card>
+                                    </div>
+                                  )}
+                                </Droppable>
+                              )}
+                            </Card.Body>
+                          </Card>
+                        </div>
                       )}
                     </Draggable>
                   ))}
@@ -274,14 +306,6 @@ const StructureView = ({
         </DragDropContext>
       </Stack>
 
-      <ApprovalModal
-        show={showModal}
-        onHide={() => setShowModal(false)}
-        onSubmit={handleApprove}
-        formData={formData}
-        setFormData={setFormData}
-        isLoading={isApprovalLoading}
-      />
     </div>
   );
 };
@@ -291,8 +315,6 @@ StructureView.propTypes = {
   setStructure: PropTypes.func.isRequired,
   handleStructureApproval: PropTypes.func.isRequired,
   isResponseLoading: PropTypes.bool,
-  formData: PropTypes.object.isRequired,
-  setFormData: PropTypes.func.isRequired,
   triggerAnimation: PropTypes.bool,
   onAnimationTriggered: PropTypes.func,
   isEditingStructure: PropTypes.bool,

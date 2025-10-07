@@ -1,7 +1,7 @@
-import { useRef } from 'react';
-import { Button, Form, Stack } from '@edx/paragon';
+import { Form, Icon, IconButton, Stack } from '@edx/paragon';
 import { ArrowForward } from '@edx/paragon/icons';
 import PropTypes from 'prop-types';
+import { useRef } from 'react';
 
 const HeroSection = ({
   courseTopic,
@@ -19,16 +19,10 @@ const HeroSection = ({
     <Stack gap={4} className="text-center py-5">
       <div>
         <h1 className="display-3 mb-3">
-          Create an Open edX course in seconds using <span style={{
-            background: 'linear-gradient(90deg, #6B46C1 0%, #9333EA 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>AI</span>
+          Course Creator
         </h1>
         <p className="lead text-muted">
-          Hi there! I'm here to help you build a course. <br />
-          Let's get started—what's the topic or name of the course you'd like to create?
+          Create an Open edX course in seconds using AI
         </p>
       </div>
 
@@ -49,19 +43,20 @@ const HeroSection = ({
               fontSize: '1rem'
             }}
           />
-          <Button
+          <IconButton
             variant="primary"
             onClick={handleTopicSubmit}
             disabled={!courseTopic.trim()}
-            iconAfter={ArrowForward}
+            iconAs={Icon}
+            alt="Arrow Forward"
+            src={ArrowForward}
             style={{
               position: 'absolute',
               bottom: '12px',
               right: '12px',
               borderRadius: '8px'
             }}
-          >
-          </Button>
+          />
         </div>
       </div>
     </Stack>

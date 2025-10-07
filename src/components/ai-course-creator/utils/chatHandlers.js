@@ -16,9 +16,14 @@ export const createChatHandlers = ({
   setMultiSelectState,
   selectedOptions,
   setSelectedOptions,
+  documentPaths,
+  setDocumentPaths,
+  attachedFiles,
+  setAttachedFiles,
   setIsUploading,
   handleGenerateCourse,
-  handleCancel
+  handleCancel,
+  handleViewProgress
 }) => {
 
   const handleMultiSelectToggle = (option) => {
@@ -107,8 +112,13 @@ export const createChatHandlers = ({
   };
 
   const goToConfirmation = () => {
+    const documentNames = courseData.documents && courseData.documents.length > 0
+      ? courseData.documents.map(doc => doc.name).join(', ')
+      : 'None';
+
     const summary = `Here's your course setup:
 Topic: "${courseData.topic}"
+Documents: ${documentNames}
 Audience: "${courseData.audience}"
 Duration: "${courseData.duration}"
 Content Components: ${courseData.components.join(', ')}
@@ -159,10 +169,45 @@ Ready to generate your course?`;
       setChatMessages(prev => [...prev, { type: 'user', content: `Selected: ${response.join(', ')}` }]);
     }
 
+    // Handle special options that don't depend on current step
+    if (response === 'View Progress') {
+      handleViewProgress();
+      return;
+    }
+
     // Handle different steps
     switch (currentStep) {
+      case 'pending-task':
+        if (response === 'Start Over') {
+          handleCancel();
+        }
+        // "View Progress" is already handled above in special options
+        break;
+
       case 'generation-error':
         handleErrorRecovery(response);
+        break;
+
+      case 'document':
+        if (response === 'Skip') {
+          setCourseData(prev => ({ ...prev, documents: [] }));
+          setChatMessages(prev => [...prev,
+          { type: 'assistant', content: "No worries! I'll generate the content based on your course topic alone." },
+          { type: 'assistant', content: "Who's your course for? Pick a target audience or let me decide.", options: ['Beginners', 'Intermediate', 'Advanced', 'Let AI decide'] }
+          ]);
+          setCurrentStep('audience');
+        }
+        break;
+
+      case 'document-retry':
+        if (response === 'Continue Without Documents') {
+          setCourseData(prev => ({ ...prev, documents: [] }));
+          setChatMessages(prev => [...prev,
+          { type: 'assistant', content: "No problem! I'll create your course without the documents." },
+          { type: 'assistant', content: "Who's your course for? Pick a target audience or let me decide.", options: ['Beginners', 'Intermediate', 'Advanced', 'Let AI decide'] }
+          ]);
+          setCurrentStep('audience');
+        }
         break;
 
       case 'audience':

@@ -1,7 +1,9 @@
-import { Badge, Button, Form, Spinner, Stack } from '@edx/paragon';
+import { Badge, Button, Dropzone, Form, Spinner, Stack } from '@edx/paragon';
 import { FilePresent } from '@edx/paragon/icons';
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
+import { getConfig } from '@edx/frontend-platform';
+import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 
 const ChatInterface = ({
   chatMessages,
@@ -14,14 +16,11 @@ const ChatInterface = ({
   multiSelectState,
   chatHandlers,
   chatInputRef,
-  handleKeyDown,
-  isUploading,
   regenerateComment,
   setRegenerateComment,
   handleRegenerateStructure,
   handleCancel,
   isResponseLoading,
-  courseData,
   setCourseData,
   onFileUploadSuccess,
   onFileUploadError
@@ -35,32 +34,86 @@ const ChatInterface = ({
   const shouldShowRegenerationControls = useMemo(() => submitted, [submitted]);
   const shouldShowOptions = useMemo(() => lastMessageWithOptions && !isGenerating, [lastMessageWithOptions, isGenerating]);
   const shouldShowActionButtons = useMemo(() => {
-    return shouldShowOptions;
-  }, [shouldShowOptions]);
+    return shouldShowOptions || (currentStep === 'document' && !isGenerating);
+  }, [shouldShowOptions, currentStep, isGenerating]);
 
-  // Get file type icon based on file extension
-  const getFileTypeIcon = (fileName) => {
-    if (!fileName) return FilePresent;
-    const extension = fileName.toLowerCase().split('.').pop();
-    switch (extension) {
-      case 'pdf':
-      case 'pptx':
-      case 'ppt':
-      case 'docx':
-      case 'doc':
-        return FilePresent;
-      default:
-        return FilePresent;
+  // Handle file upload for Paragon Dropzone
+  const handleProcessUpload = async ({ fileData, requestConfig, handleError }) => {
+    try {
+      console.log('Processing upload, fileData type:', typeof fileData, fileData);
+
+      // fileData from Paragon Dropzone is ALREADY a FormData object
+      // We need to extract the file and add our description
+      const file = fileData.get('file'); // Get the actual File object
+
+      console.log('Extracted file:', file);
+      console.log('File details:', file?.name, file?.type, file?.size);
+
+      // Create our FormData with the file and description
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('description', `Course material: ${file?.name || 'unknown'}`);
+
+      // Log FormData contents for debugging
+      console.log('FormData entries:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0], '=', pair[1]);
+      }
+
+      // Use the attachment API with requestConfig for progress tracking
+      const envConfig = getConfig();
+      const baseUrl = envConfig.STUDIO_BASE_URL;
+      const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/`;
+
+      console.log('Uploading to:', url);
+
+      // Merge requestConfig but ensure we don't override Content-Type
+      const axiosConfig = {
+        ...requestConfig,
+        headers: {
+          ...(requestConfig?.headers || {}),
+        }
+      };
+
+      // Explicitly delete Content-Type to let browser set it with boundary
+      if (axiosConfig.headers['Content-Type']) {
+        delete axiosConfig.headers['Content-Type'];
+      }
+      if (axiosConfig.headers['content-type']) {
+        delete axiosConfig.headers['content-type'];
+      }
+
+      console.log('Request config:', axiosConfig);
+
+      const response = await getAuthenticatedHttpClient().post(url, formData, axiosConfig);
+
+      console.log('Upload successful:', response.data);
+
+      // Call success callback with the actual file object (not FormData)
+      if (onFileUploadSuccess) {
+        onFileUploadSuccess(file, response.data);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Upload error:', error);
+      console.error('Error response:', error.response?.data);
+      handleError(error);
+      if (onFileUploadError) {
+        onFileUploadError(error);
+      }
+      throw error;
     }
   };
 
+  console.log('currentStep', currentStep);
 
   // Render message content
   const renderMessage = (message, index) => (
     <div
       key={index}
       className={`p-3 mb-3 rounded ${message.type === 'user'
-        ? 'bg-primary text-white ms-auto'
+        ? 'bg-primary text-white ml-auto'
         : message.type === 'error'
           ? 'bg-danger text-white'
           : 'bg-light'
@@ -117,6 +170,33 @@ const ChatInterface = ({
     </Stack>
   );
 
+  // Render document dropzone
+  const renderDocumentDropzone = () => (
+    <div className="mb-3">
+      <Dropzone
+        onProcessUpload={handleProcessUpload}
+        accept={{
+          'application/pdf': ['.pdf'],
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+          'application/msword': ['.doc'],
+          'text/plain': ['.txt'],
+          'text/markdown': ['.md'],
+          'application/rtf': ['.rtf'],
+          'application/vnd.ms-powerpoint': ['.ppt'],
+          'application/vnd.ms-excel': ['.xls'],
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+          'text/csv': ['.csv']
+        }}
+        maxSize={50 * 1024 * 1024}
+        progressVariant="bar"
+        errorMessages={{
+          invalidType: 'Invalid file type. Please upload PDF, Word, PowerPoint, Excel, or text files.',
+          invalidSize: 'The file size must be less than 50MB.',
+        }}
+      />
+    </div>
+  );
 
   // Render text input
   const renderTextInput = (placeholder = "Type your message...") => {
@@ -181,7 +261,7 @@ const ChatInterface = ({
         >
           {isGenerating ? (
             <>
-              <Spinner animation="border" size="sm" className="me-2" />
+              <Spinner animation="border" size="sm" className="mr-2" />
               Regenerating...
             </>
           ) : (
@@ -198,7 +278,7 @@ const ChatInterface = ({
 
     if (currentStep === 'confirmation') {
       return (
-        <Stack direction="horizontal" gap={2} className="justify-content-end">
+        <Stack direction="horizontal" gap={2} className="justify-content-end mt-2.5 mr-2">
           <Button variant="primary" onClick={() => chatHandlers.handleChatResponse('Yes, generate it!')}>
             Generate Course
           </Button>
@@ -206,7 +286,7 @@ const ChatInterface = ({
       );
     }
 
-    const showAIDecideButton = !['components', 'assessmentTypes'].includes(currentStep);
+    const showAIDecideButton = !['document', 'components', 'assessmentTypes', 'pending-task'].includes(currentStep);
 
     return (
       <Stack direction="horizontal" gap={2} className="flex-wrap">
@@ -259,6 +339,10 @@ const ChatInterface = ({
       return renderTextInput("Anything else you want to add?");
     }
 
+    if (currentStep === 'document') {
+      return renderDocumentDropzone();
+    }
+
     return renderOptions();
   };
 
@@ -269,7 +353,7 @@ const ChatInterface = ({
         {chatMessages.map(renderMessage)}
         {(isGenerating || isResponseLoading) && (
           <div className="p-3 mb-3 rounded bg-light">
-            <Spinner animation="border" size="sm" className="me-2" />
+            <Spinner animation="border" size="sm" className="mr-2" />
             <span>Thinking...</span>
           </div>
         )}
@@ -307,6 +391,8 @@ ChatInterface.propTypes = {
   isResponseLoading: PropTypes.bool,
   courseData: PropTypes.object,
   setCourseData: PropTypes.func,
+  onFileUploadSuccess: PropTypes.func,
+  onFileUploadError: PropTypes.func,
 };
 
 export default ChatInterface;
