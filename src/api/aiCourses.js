@@ -21,7 +21,8 @@ export const listAICourses = async (params = {}) => {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
     const queryParams = new URLSearchParams(params).toString();
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/ai-courses/${queryParams ? `?${queryParams}` : ''}`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/ai-courses/${queryParams ? `?${queryParams}` : ''}`;
 
     const response = await getAuthenticatedHttpClient().get(url);
     return response;
@@ -40,7 +41,8 @@ export const getAICourse = async (courseId) => {
   try {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/ai-courses/${courseId}/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/ai-courses/${courseId}/`;
 
     const response = await getAuthenticatedHttpClient().get(url);
     return response;

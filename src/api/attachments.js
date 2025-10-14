@@ -11,7 +11,8 @@ export const uploadAttachment = async (file, description = '') => {
   try {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/attachments/`;
 
     const formData = new FormData();
     formData.append('file', file);
@@ -48,7 +49,8 @@ export const listAttachments = async (filters = {}) => {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
     const queryParams = new URLSearchParams(filters).toString();
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/${queryParams ? `?${queryParams}` : ''}`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/attachments/${queryParams ? `?${queryParams}` : ''}`;
 
     const response = await getAuthenticatedHttpClient().get(url);
     return response;
@@ -67,7 +69,8 @@ export const getAttachment = async (attachmentId) => {
   try {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/${attachmentId}/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/attachments/${attachmentId}/`;
 
     const response = await getAuthenticatedHttpClient().get(url);
     return response;
@@ -87,7 +90,8 @@ export const updateAttachment = async (attachmentId, description) => {
   try {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/${attachmentId}/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/attachments/${attachmentId}/`;
 
     const response = await getAuthenticatedHttpClient().patch(url, { description });
     return response;
@@ -106,7 +110,8 @@ export const deleteAttachment = async (attachmentId) => {
   try {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/${attachmentId}/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/attachments/${attachmentId}/`;
 
     const response = await getAuthenticatedHttpClient().delete(url);
     return response;
@@ -125,7 +130,8 @@ export const bulkDeleteAttachments = async (attachmentIds) => {
   try {
     const config = getConfig();
     const baseUrl = config.STUDIO_BASE_URL;
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/bulk-delete/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/attachments/bulk-delete/`;
 
     const response = await getAuthenticatedHttpClient().post(url, {
       attachment_ids: attachmentIds

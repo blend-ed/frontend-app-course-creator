@@ -10,7 +10,8 @@ export const getTaskStatus = async (taskId) => {
       throw new Error('STUDIO_BASE_URL is not configured. Please check your environment configuration.');
     }
 
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/task-status/${taskId}/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/task-status/${taskId}/`;
     console.log('Making request to:', url);
 
     const response = await getAuthenticatedHttpClient().get(url);

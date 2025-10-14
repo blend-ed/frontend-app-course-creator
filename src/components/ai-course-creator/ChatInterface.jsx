@@ -63,7 +63,8 @@ const ChatInterface = ({
       // Use the attachment API with requestConfig for progress tracking
       const envConfig = getConfig();
       const baseUrl = envConfig.STUDIO_BASE_URL;
-      const url = `${baseUrl}/blendxcoursecreator_enterprise/api/attachments/`;
+      const apiType = envConfig.BLENDX_AICC_API_TYPE;
+      const url = `${baseUrl}/${apiType}/api/attachments/`;
 
       console.log('Uploading to:', url);
 

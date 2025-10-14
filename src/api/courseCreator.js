@@ -77,7 +77,8 @@ export const createCourse = async (requestData) => {
       throw new Error('STUDIO_BASE_URL is not configured. Please check your environment configuration.');
     }
 
-    const url = `${baseUrl}/blendxcoursecreator_enterprise/api/course-creator/`;
+    const apiType = config.BLENDX_AICC_API_TYPE;
+    const url = `${baseUrl}/${apiType}/api/course-creator/`;
     console.log('Making request to:', url);
     console.log('Request data:', requestData);
 
