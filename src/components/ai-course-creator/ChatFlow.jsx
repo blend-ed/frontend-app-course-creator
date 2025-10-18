@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col } from '@edx/paragon';
+import { Container, Row, Col } from '@openedx/paragon';
 import PropTypes from 'prop-types';
 import { uploadAttachment } from '../../api/attachments';
 import { createChatHandlers } from './utils/chatHandlers';

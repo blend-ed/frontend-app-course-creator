@@ -1,4 +1,4 @@
-import { Container, Stack } from '@edx/paragon';
+import { Container, Stack } from '@openedx/paragon';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   HeroSection,

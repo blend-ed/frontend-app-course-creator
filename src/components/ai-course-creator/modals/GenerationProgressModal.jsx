@@ -1,6 +1,6 @@
 import { getConfig } from '@edx/frontend-platform';
-import { Button, ModalDialog, Stack } from '@edx/paragon';
-import { History, OpenInNew } from '@edx/paragon/icons';
+import { Button, ModalDialog, Stack } from '@openedx/paragon';
+import { History, OpenInNew } from '@openedx/paragon/icons';
 import PropTypes from 'prop-types';
 
 const GenerationProgressModal = ({ show, handleCancel }) => {

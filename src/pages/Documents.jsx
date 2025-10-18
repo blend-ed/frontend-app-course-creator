@@ -14,8 +14,8 @@ import {
   Icon,
   IconButton,
   ModalDialog,
-} from '@edx/paragon';
-import { Delete, Edit, Refresh, FilePresent, CheckCircle, Cancel } from '@edx/paragon/icons';
+} from '@openedx/paragon';
+import { Delete, Edit, Refresh, FilePresent, CheckCircle, Cancel } from '@openedx/paragon/icons';
 import { listAttachments, deleteAttachment, updateAttachment } from '../api/attachments';
 
 const Documents = () => {
