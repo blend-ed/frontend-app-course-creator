@@ -17,8 +17,10 @@ import {
 } from '@edx/paragon';
 import { InfoOutline, Refresh } from '@edx/paragon/icons';
 import { listAICourses, getAICourse } from '../api/aiCourses';
+import { getConfig } from '@edx/frontend-platform';
 
 const History = () => {
+  const apiType = getConfig().BLENDX_AICC_API_TYPE;
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -119,7 +121,7 @@ const History = () => {
     return duration;
   };
 
-  const columns = [
+  const allColumns = [
     {
       Header: 'Topic',
       accessor: 'topic',
@@ -196,6 +198,11 @@ const History = () => {
       ),
     },
   ];
+
+  // Filter columns based on API type
+  const columns = apiType === 'blendxcoursecreator'
+    ? allColumns.filter(col => col.accessor !== 'action' && col.accessor !== 'duration')
+    : allColumns;
 
   const handleViewDetails = async (courseId) => {
     try {
