@@ -1,5 +1,5 @@
-import { Button, Stack, Form, Card, IconButton, Icon, Spinner } from '@edx/paragon';
-import { Add, Delete, Edit, Check, Close } from '@edx/paragon/icons';
+import { Button, Stack, Form, Card, IconButton, Icon, Spinner } from '@openedx/paragon';
+import { Add, Delete, Edit, Check, Close } from '@openedx/paragon/icons';
 import { useEffect, useState, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import PropTypes from 'prop-types';

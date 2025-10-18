@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { Container, Nav } from '@edx/paragon';
+import { Container, Nav } from '@openedx/paragon';
 import { MainPage } from './pages';
 import History from './pages/History';
 import Documents from './pages/Documents';

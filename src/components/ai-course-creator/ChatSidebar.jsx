@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { Dropdown, Button, Stack, Icon, IconButton } from '@edx/paragon';
-import { Add, Close, FilePresent, Check } from '@edx/paragon/icons';
+import { Dropdown, Button, Stack, Icon, IconButton } from '@openedx/paragon';
+import { Add, Close, FilePresent, Check } from '@openedx/paragon/icons';
 import PropTypes from 'prop-types';
 import { deleteAttachment } from '../../api/attachments';
 import { getAvailableComponentOptions } from './utils/componentOptions';
