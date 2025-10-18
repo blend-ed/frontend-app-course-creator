@@ -14,8 +14,8 @@ import {
   Card,
   Icon,
   IconButton,
-} from '@edx/paragon';
-import { InfoOutline, Refresh } from '@edx/paragon/icons';
+} from '@openedx/paragon';
+import { InfoOutline, Refresh } from '@openedx/paragon/icons';
 import { listAICourses, getAICourse } from '../api/aiCourses';
 import { getConfig } from '@edx/frontend-platform';
 

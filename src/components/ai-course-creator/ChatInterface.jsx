@@ -1,5 +1,5 @@
-import { Badge, Button, Dropzone, Form, Spinner, Stack } from '@edx/paragon';
-import { FilePresent } from '@edx/paragon/icons';
+import { Badge, Button, Dropzone, Form, Spinner, Stack } from '@openedx/paragon';
+import { FilePresent } from '@openedx/paragon/icons';
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import { getConfig } from '@edx/frontend-platform';

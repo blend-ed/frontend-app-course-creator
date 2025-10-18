@@ -1,5 +1,5 @@
-import { Form, Icon, IconButton, Stack, Container, Nav } from '@edx/paragon';
-import { ArrowForward } from '@edx/paragon/icons';
+import { Form, Icon, IconButton, Stack, Container, Nav } from '@openedx/paragon';
+import { ArrowForward } from '@openedx/paragon/icons';
 import PropTypes from 'prop-types';
 import { useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';

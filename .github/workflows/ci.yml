@@ -12,15 +12,13 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Setup Nodejs Env
-      run: echo "NODE_VER=`cat .nvmrc`" >> $GITHUB_ENV
     - name: Setup Nodejs
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VER }}
+        node-version-file: '.nvmrc'
     - name: Install dependencies
       run: npm ci
     - name: Lint
@@ -32,4 +30,7 @@ jobs:
     - name: i18n_extract
       run: npm run i18n_extract
     - name: Coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true
