@@ -3,17 +3,17 @@
  */
 
 const DURATION_TO_COURSE_SIZE = {
-  'Short (1-2 hours)': 'small',
-  'Medium (3-5 hours)': 'medium',
-  'Long (6+ hours)': 'large',
+  'Short (10-20 minutes)': 'small',
+  'Medium (30-50 minutes)': 'medium',
+  'Long (1+ hours)': 'large',
   'Let AI decide': 'ai-generated',
   'ai-generated': 'ai-generated'  // Handle when stored value is used
 };
 
 const COURSE_SIZE_TO_DURATION = {
-  'small': 'Short (1-2 hours)',
-  'medium': 'Medium (3-5 hours)',
-  'large': 'Long (6+ hours)',
+  'small': 'Short (10-20 minutes)',
+  'medium': 'Medium (30-50 minutes)',
+  'large': 'Long (1+ hours)',
   'ai-generated': 'Let AI decide'
 };
 

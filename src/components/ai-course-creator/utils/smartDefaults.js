@@ -19,9 +19,9 @@ export const getSmartDefaults = (topic) => {
   // Smart duration detection - using standardized UI values
   let duration = 'Let AI decide';
   if (lowerTopic.includes('quick') || lowerTopic.includes('crash') || lowerTopic.includes('overview') || lowerTopic.includes('intro')) {
-    duration = 'Short (1-2 hours)';
+    duration = 'Short (10-20 minutes)';
   } else if (lowerTopic.includes('comprehensive') || lowerTopic.includes('complete') || lowerTopic.includes('master') || lowerTopic.includes('deep')) {
-    duration = 'Long (6+ hours)';
+    duration = 'Long (1+ hours)';
   }
 
   // Smart components detection - separated into content and assessment
