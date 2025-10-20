@@ -1,7 +1,7 @@
 {
   "name": "@edx/frontend-app-course-creator",
   "version": "0.1.0",
-  "description": "Frontend application template",
+  "description": "AI Course Creator",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/openedx/frontend-app-course-creator.git"
