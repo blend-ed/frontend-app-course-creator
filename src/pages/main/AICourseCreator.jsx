@@ -16,8 +16,7 @@ const AICourseCreator = () => {
       'Text': 'html',
       'Video Content': 'video',
       'Images': 'image',
-      'Role Play Coaching': 'html',
-      'Let AI decide': 'html'
+      'Interactive Content': 'interactive_html',
     };
 
     const assessmentMapping = {
@@ -36,7 +35,7 @@ const AICourseCreator = () => {
       .map(assessment => assessmentMapping[assessment])
       .filter(assessment => assessment !== undefined);
 
-    const validApiComponents = ['html', 'image', 'video', 'problem_multiple_choice', 'problem_checkbox', 'problem_text_input', 'problem_dropdown', 'problem_numerical'];
+    const validApiComponents = ['html', 'image', 'video', 'problem_multiple_choice', 'problem_checkbox', 'problem_text_input', 'problem_dropdown', 'problem_numerical', 'interactive_html'];
 
     let apiComponents = [...new Set([...mappedComponents, ...mappedAssessments])];
 
