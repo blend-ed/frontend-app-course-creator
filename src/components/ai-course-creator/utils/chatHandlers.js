@@ -4,6 +4,7 @@
  */
 
 import { getSmartDefaults } from './smartDefaults';
+import { getAvailableComponentOptions } from './componentOptions';
 
 export const createChatHandlers = ({
   courseData,
@@ -68,7 +69,7 @@ export const createChatHandlers = ({
         setChatMessages(prev => [...prev,
         // Let AI decide audience
         { type: 'assistant', content: `You selected "Let AI decide" for audience. I'll choose the best audience for your course based on your other selections.` },
-        { type: 'assistant', content: "How long should your course be? Choose an option or let me figure it out.", options: ['Short (1-2 hours)', 'Medium (3-5 hours)', 'Long (6+ hours)', 'Let AI decide'] }
+        { type: 'assistant', content: "How long should your course be? Choose an option or let me figure it out.", options: ['Short (10-20 minutes)', 'Medium (30-50 minutes)', 'Long (1+ hours)', 'Let AI decide'] }
         ]);
         setCurrentStep('duration');
         break;
@@ -77,7 +78,7 @@ export const createChatHandlers = ({
         setCourseData(prev => ({ ...prev, duration: 'ai-generated' }));
         setChatMessages(prev => [...prev,
         { type: 'assistant', content: `Perfect! I'll choose the best duration for your course based on your other selections.` },
-        { type: 'assistant', content: "What content components do you want in your course? You can pick multiple options or let me choose for you.", options: ['Text', 'Video Content', 'Images'], multiSelect: true }
+        { type: 'assistant', content: "What content components do you want in your course? You can pick multiple options or let me choose for you.", options: getAvailableComponentOptions(), multiSelect: true }
         ]);
         setCurrentStep('components');
         setMultiSelectState({
@@ -217,14 +218,14 @@ Ready to generate your course?`;
           setCourseData(prev => ({ ...prev, audience: 'Let AI decide' }));
           setChatMessages(prev => [...prev,
           { type: 'assistant', content: `You selected "Let AI decide" for audience. I'll choose the best audience for your course based on your other selections.` },
-          { type: 'assistant', content: "How long should your course be? Choose an option or let me figure it out.", options: ['Short (1-2 hours)', 'Medium (3-5 hours)', 'Long (6+ hours)', 'Let AI decide'] }
+          { type: 'assistant', content: "How long should your course be? Choose an option or let me figure it out.", options: ['Short (10-20 minutes)', 'Medium (30-50 minutes)', 'Long (1+ hours)', 'Let AI decide'] }
           ]);
           setCurrentStep('duration');
         } else {
           setCourseData(prev => ({ ...prev, audience: response }));
           setChatMessages(prev => [...prev,
           { type: 'assistant', content: response === 'Skip' ? 'Moving on to course duration.' : `Perfect! Your course is tailored for "${response}".` },
-          { type: 'assistant', content: "How long should your course be? Choose an option or let me figure it out.", options: ['Short (1-2 hours)', 'Medium (3-5 hours)', 'Long (6+ hours)', 'Let AI decide'] }
+          { type: 'assistant', content: "How long should your course be? Choose an option or let me figure it out.", options: ['Short (10-20 minutes)', 'Medium (30-50 minutes)', 'Long (1+ hours)', 'Let AI decide'] }
           ]);
           setCurrentStep('duration');
         }
@@ -235,7 +236,7 @@ Ready to generate your course?`;
           setCourseData(prev => ({ ...prev, duration: 'ai-generated' }));
           setChatMessages(prev => [...prev,
           { type: 'assistant', content: `Perfect! I'll choose the best duration for your course based on your other selections.` },
-          { type: 'assistant', content: "What content components do you want in your course? You can pick multiple options or let me choose for you.", options: ['Text', 'Video Content', 'Images'], multiSelect: true }
+          { type: 'assistant', content: "What content components do you want in your course? You can pick multiple options or let me choose for you.", options: getAvailableComponentOptions(), multiSelect: true }
           ]);
           setCurrentStep('components');
           setMultiSelectState({
@@ -247,7 +248,7 @@ Ready to generate your course?`;
           setCourseData(prev => ({ ...prev, duration: response }));
           setChatMessages(prev => [...prev,
           { type: 'assistant', content: response === 'Skip' ? 'Moving on to content components.' : `Got it! The course will be "${response}" long.` },
-          { type: 'assistant', content: "What content components do you want in your course? You can pick multiple options or let me choose for you.", options: ['Text', 'Video Content', 'Images'], multiSelect: true }
+          { type: 'assistant', content: "What content components do you want in your course? You can pick multiple options or let me choose for you.", options: getAvailableComponentOptions(), multiSelect: true }
           ]);
           setCurrentStep('components');
           setMultiSelectState({

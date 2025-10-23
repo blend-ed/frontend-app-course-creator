@@ -3,6 +3,7 @@ import { Dropdown, Button, Stack, Icon, IconButton } from '@edx/paragon';
 import { Add, Close, FilePresent, Check } from '@edx/paragon/icons';
 import PropTypes from 'prop-types';
 import { deleteAttachment } from '../../api/attachments';
+import { getAvailableComponentOptions } from './utils/componentOptions';
 
 const ChatSidebar = ({
   courseData,
@@ -21,14 +22,14 @@ const ChatSidebar = ({
   const [showAssessmentsDropdown, setShowAssessmentsDropdown] = useState(false);
 
   // Available options for components and assessments
-  const availableComponents = ['Text', 'Images', 'Video Content'];
+  const availableComponents = getAvailableComponentOptions();
   const availableAssessments = ['Multiple Choice', 'Checkbox Questions', 'Text Input Questions', 'Dropdown Questions', 'Numerical Problems'];
 
   // Property options mapping
   const propertyOptions = {
     audience: ['Beginners', 'Intermediate', 'Advanced', 'Let AI decide'],
     format: ['Self-paced', 'Instructor-led', 'Blended', 'Cohort-based'],
-    duration: ['Short (1-2 hours)', 'Medium (3-5 hours)', 'Long (6+ hours)', 'Let AI decide'],
+    duration: ['Short (10-20 minutes)', 'Medium (30-50 minutes)', 'Long (1+ hours)', 'Let AI decide'],
     difficulty: ['Beginner', 'Intermediate', 'Advanced', 'Expert']
   };
 
@@ -141,7 +142,7 @@ const ChatSidebar = ({
           if (!categories.Assessments.includes(item)) {
             categories.Assessments.push(item);
           }
-        } else if (['Text', 'Video Content', 'Images'].includes(item)) {
+        } else if (getAvailableComponentOptions().includes(item)) {
           if (!categories.Components.includes(item)) {
             categories.Components.push(item);
           }
