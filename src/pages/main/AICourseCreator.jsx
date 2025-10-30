@@ -7,7 +7,7 @@ import {
   GenerationProgressModal
 } from '../../components/ai-course-creator';
 import { durationToCourseSize } from '../../components/ai-course-creator/utils/durationMapping';
-import { createCourse } from '../../api/courseCreator';
+import { createCourse, getAllOrganizations } from '../../api/courseCreator';
 
 const AICourseCreator = () => {
   // Helper function to map user-friendly component names to API component names
@@ -53,6 +53,7 @@ const AICourseCreator = () => {
   const [currentStep, setCurrentStep] = useState('topic');
   const [courseData, setCourseData] = useState({
     topic: '',
+    organization: '',
     document: null,
     audience: '',
     duration: '',
@@ -90,6 +91,10 @@ const AICourseCreator = () => {
   // Input handling
   const [regenerateComment, setRegenerateComment] = useState('');
 
+  // Organizations state
+  const [organizations, setOrganizations] = useState([]);
+  const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(false);
+
   // Animation control
   const [shouldAnimateStructure, setShouldAnimateStructure] = useState(false);
   const [isEditingStructure, setIsEditingStructure] = useState(false);
@@ -113,15 +118,45 @@ const AICourseCreator = () => {
     };
   }, []);
 
-  const handleTopicSubmit = useCallback(() => {
+  const handleTopicSubmit = useCallback(async () => {
     if (courseTopic.trim()) {
       setCourseData(prev => ({ ...prev, topic: courseTopic }));
       setChatMode(true);
       setChatMessages([
         { type: 'user', content: `Create a course on "${courseTopic}".` },
-        { type: 'assistant', content: 'Do you have a document (like a PDF or PPT) to base your course content on? This can help me generate it more accurately. You can drag and drop a file below or click to skip.' }
+        { type: 'assistant', content: 'Great! First, let me fetch the available organizations...', isLoading: true }
       ]);
-      setCurrentStep('document');
+      
+      // Fetch organizations
+      setIsLoadingOrganizations(true);
+      try {
+        const orgsData = await getAllOrganizations();
+        setOrganizations(orgsData);
+        
+        if (orgsData.length > 0) {
+          setChatMessages([
+            { type: 'user', content: `Create a course on "${courseTopic}".` },
+            { type: 'assistant', content: 'Which organization should this course be created in? You can search below:', requiresOrganizationSearch: true }
+          ]);
+          setCurrentStep('organization');
+        } else {
+          setChatMessages([
+            { type: 'user', content: `Create a course on "${courseTopic}".` },
+            { type: 'assistant', content: 'Do you have a document (like a PDF or PPT) to base your course content on? This can help me generate it more accurately. You can drag and drop a file below or click to skip.' }
+          ]);
+          setCurrentStep('document');
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+        setChatMessages([
+          { type: 'user', content: `Create a course on "${courseTopic}".` },
+          { type: 'error', content: 'Failed to load organizations. Continuing without organization selection.' },
+          { type: 'assistant', content: 'Do you have a document (like a PDF or PPT) to base your course content on? This can help me generate it more accurately. You can drag and drop a file below or click to skip.' }
+        ]);
+        setCurrentStep('document');
+      } finally {
+        setIsLoadingOrganizations(false);
+      }
     }
   }, [courseTopic]);
 
@@ -160,6 +195,7 @@ const AICourseCreator = () => {
         available_components: mapComponentsToApiFormat(courseData.components, courseData.assessmentTypes),
       };
 
+      if (hasMeaningfulValue(courseData.organization)) payload.org = courseData.organization;
       if (hasMeaningfulValue(courseData.audience) || courseData.audience === 'Let AI decide') payload.audience = courseData.audience;
       if (hasMeaningfulValue(courseData.duration) || courseData.duration === 'ai-generated') payload.course_size = durationToCourseSize(courseData.duration);
       if (hasMeaningfulValue(courseData.imageSource)) payload.image_source = courseData.imageSource;
@@ -270,6 +306,7 @@ const AICourseCreator = () => {
         course_structure: courseStructure,
       };
 
+      if (hasMeaningfulValue(courseData.organization)) payload.org = courseData.organization;
       if (hasMeaningfulValue(courseData.audience) || courseData.audience === 'Let AI decide') payload.audience = courseData.audience;
       if (hasMeaningfulValue(courseData.duration) || courseData.duration === 'ai-generated') payload.course_size = durationToCourseSize(courseData.duration);
       if (hasMeaningfulValue(courseData.imageSource)) payload.image_source = courseData.imageSource;
@@ -345,6 +382,7 @@ const AICourseCreator = () => {
         available_components: mapComponentsToApiFormat(courseData.components, courseData.assessmentTypes),
       };
 
+      if (hasMeaningfulValue(courseData.organization)) payload.org = courseData.organization;
       if (hasMeaningfulValue(courseData.audience) || courseData.audience === 'Let AI decide') payload.audience = courseData.audience;
       if (hasMeaningfulValue(courseData.duration) || courseData.duration === 'ai-generated') payload.course_size = durationToCourseSize(courseData.duration);
       if (hasMeaningfulValue(courseData.imageSource)) payload.image_source = courseData.imageSource;
@@ -430,6 +468,7 @@ const AICourseCreator = () => {
     setCurrentStep('topic');
     setCourseData({
       topic: '',
+      organization: '',
       document: null,
       audience: '',
       duration: '',
@@ -464,35 +503,36 @@ const AICourseCreator = () => {
       <Container fluid>
         <div className="d-flex gap-4" style={{ minHeight: '100vh' }}>
           <div style={{ flex: '1', maxWidth: '40%' }}>
-            <ChatFlow
-              courseTopic={courseTopic}
-              courseData={courseData}
-              setCourseData={setCourseData}
-              chatMessages={chatMessages}
-              setChatMessages={setChatMessages}
-              currentStep={currentStep}
-              setCurrentStep={setCurrentStep}
-              multiSelectState={multiSelectState}
-              setMultiSelectState={setMultiSelectState}
-              selectedOptions={selectedOptions}
-              setSelectedOptions={setSelectedOptions}
-              documentPaths={documentPaths}
-              setDocumentPaths={setDocumentPaths}
-              attachedFiles={attachedFiles}
-              setAttachedFiles={setAttachedFiles}
-              isGenerating={isGenerating}
-              setIsGenerating={setIsGenerating}
-              isUploading={isUploading}
-              setIsUploading={setIsUploading}
-              submitted={submitted}
-              setSubmitted={setSubmitted}
-              handleGenerateCourse={handleGenerateCourse}
-              handleCancel={handleCancel}
-              regenerateComment={regenerateComment}
-              setRegenerateComment={setRegenerateComment}
-              handleRegenerateStructure={handleRegenerateStructure}
-              isResponseLoading={isResponseLoading}
-            />
+        <ChatFlow
+          courseTopic={courseTopic}
+          courseData={courseData}
+          setCourseData={setCourseData}
+          chatMessages={chatMessages}
+          setChatMessages={setChatMessages}
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
+          multiSelectState={multiSelectState}
+          setMultiSelectState={setMultiSelectState}
+          selectedOptions={selectedOptions}
+          setSelectedOptions={setSelectedOptions}
+          documentPaths={documentPaths}
+          setDocumentPaths={setDocumentPaths}
+          attachedFiles={attachedFiles}
+          setAttachedFiles={setAttachedFiles}
+          isGenerating={isGenerating}
+          setIsGenerating={setIsGenerating}
+          isUploading={isUploading}
+          setIsUploading={setIsUploading}
+          submitted={submitted}
+          setSubmitted={setSubmitted}
+          handleGenerateCourse={handleGenerateCourse}
+          handleCancel={handleCancel}
+          regenerateComment={regenerateComment}
+          setRegenerateComment={setRegenerateComment}
+          handleRegenerateStructure={handleRegenerateStructure}
+          isResponseLoading={isResponseLoading}
+          organizations={organizations}
+        />
           </div>
           <div style={{ flex: '1' }}>
             <StructureView
@@ -551,6 +591,7 @@ const AICourseCreator = () => {
           handleRegenerateStructure={handleRegenerateStructure}
           isResponseLoading={isResponseLoading}
           handleViewProgress={handleViewProgress}
+          organizations={organizations}
         />
         <GenerationProgressModal
           show={showGenerationModal}

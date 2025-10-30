@@ -119,6 +119,7 @@ export const createChatHandlers = ({
 
     const summary = `Here's your course setup:
 Topic: "${courseData.topic}"
+${courseData.organization ? `Organization: "${courseData.organization}"` : ''}
 Documents: ${documentNames}
 Audience: "${courseData.audience}"
 Duration: "${courseData.duration}"
@@ -189,6 +190,15 @@ Ready to generate your course?`;
 
       case 'generation-error':
         handleErrorRecovery(response);
+        break;
+
+      case 'organization':
+        setCourseData(prev => ({ ...prev, organization: response }));
+        setChatMessages(prev => [...prev,
+        { type: 'assistant', content: `Perfect! The course will be created in "${response}".` },
+        { type: 'assistant', content: 'Do you have a document (like a PDF or PPT) to base your course content on? This can help me generate it more accurately. You can drag and drop a file below or click to skip.' }
+        ]);
+        setCurrentStep('document');
         break;
 
       case 'document':

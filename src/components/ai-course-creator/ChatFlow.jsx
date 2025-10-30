@@ -34,7 +34,8 @@ const ChatFlow = ({
   setRegenerateComment,
   handleRegenerateStructure,
   isResponseLoading,
-  handleViewProgress
+  handleViewProgress,
+  organizations
 }) => {
   const chatInputRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -260,6 +261,7 @@ const ChatFlow = ({
               setCourseData={setCourseData}
               onFileUploadSuccess={handleFileUploadSuccess}
               onFileUploadError={handleFileUploadError}
+              organizations={organizations}
             />
           </Col>
           <Col lg={3}>
@@ -303,6 +305,7 @@ const ChatFlow = ({
         setCourseData={setCourseData}
         onFileUploadSuccess={handleFileUploadSuccess}
         onFileUploadError={handleFileUploadError}
+        organizations={organizations}
       />
     );
   }
@@ -337,6 +340,7 @@ ChatFlow.propTypes = {
   handleRegenerateStructure: PropTypes.func,
   isResponseLoading: PropTypes.bool,
   handleViewProgress: PropTypes.func,
+  organizations: PropTypes.array,
 };
 
 export default ChatFlow;

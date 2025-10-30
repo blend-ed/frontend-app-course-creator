@@ -2,6 +2,67 @@ import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { getConfig } from '@edx/frontend-platform';
 
 /**
+ * Fetches list of organizations from the API
+ * @param {number} [page=1] - Page number
+ * @param {number} [pageSize=200] - Number of results per page
+ * @returns {Promise<Object>} The API response containing organizations
+ * @throws {Error} When API call fails
+ */
+export const getOrganizations = async (page = 1, pageSize = 200) => {
+  try {
+    const config = getConfig();
+    const baseUrl = config.LMS_BASE_URL;
+
+    if (!baseUrl) {
+      throw new Error('LMS_BASE_URL is not configured. Please check your environment configuration.');
+    }
+
+    const url = `${baseUrl}/api/organizations/v0/organizations/?page=${page}&page_size=${pageSize}`;
+    console.log('Fetching organizations from:', url);
+
+    const response = await getAuthenticatedHttpClient().get(url);
+    return response;
+  } catch (error) {
+    console.error('Organizations API Error Details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Fetches all organizations from the API by handling pagination
+ * @returns {Promise<Array>} Array of all organizations
+ * @throws {Error} When API call fails
+ */
+export const getAllOrganizations = async () => {
+  try {
+    const allOrganizations = [];
+    let page = 1;
+    let hasMore = true;
+    const pageSize = 200;
+
+    while (hasMore) {
+      const response = await getOrganizations(page, pageSize);
+      const results = response.data?.results || [];
+      allOrganizations.push(...results);
+
+      // Check if there are more pages
+      const next = response.data?.next;
+      hasMore = next !== null;
+      page++;
+    }
+
+    return allOrganizations;
+  } catch (error) {
+    console.error('Error fetching all organizations:', error);
+    throw error;
+  }
+};
+
+/**
  * Creates or updates course content using the Course Creator API
  * @param {Object} requestData - The course creation request data
  * @param {string} requestData.action - Action to perform: 'create_structure', 'update_structure', or 'create_content'

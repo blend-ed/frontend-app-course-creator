@@ -1,4 +1,4 @@
-import { Badge, Button, Dropzone, Form, Spinner, Stack } from '@edx/paragon';
+import { Badge, Button, Dropzone, Form, Spinner, Stack, SearchField } from '@edx/paragon';
 import { FilePresent } from '@edx/paragon/icons';
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
@@ -23,11 +23,16 @@ const ChatInterface = ({
   isResponseLoading,
   setCourseData,
   onFileUploadSuccess,
-  onFileUploadError
+  onFileUploadError,
+  organizations
 }) => {
 
   // State to track the current input value
   const [inputValue, setInputValue] = useState('');
+  
+  // State for organization search
+  const [organizationSearch, setOrganizationSearch] = useState('');
+  const [selectedOrganization, setSelectedOrganization] = useState(null);
 
   // Memoized computed values
   const shouldShowInput = useMemo(() => !submitted, [submitted]);
@@ -36,6 +41,18 @@ const ChatInterface = ({
   const shouldShowActionButtons = useMemo(() => {
     return shouldShowOptions || (currentStep === 'document' && !isGenerating);
   }, [shouldShowOptions, currentStep, isGenerating]);
+  
+  // Filter organizations based on search
+  const filteredOrganizations = useMemo(() => {
+    if (!organizations || organizations.length === 0) return [];
+    if (!organizationSearch.trim()) return organizations.slice(0, 10); // Show first 10 by default
+    
+    const searchLower = organizationSearch.toLowerCase();
+    return organizations.filter(org => 
+      org.short_name?.toLowerCase().includes(searchLower) || 
+      org.name?.toLowerCase().includes(searchLower)
+    ).slice(0, 10); // Limit to 10 results
+  }, [organizations, organizationSearch]);
 
   // Handle file upload for Paragon Dropzone
   const handleProcessUpload = async ({ fileData, requestConfig, handleError }) => {
@@ -199,6 +216,48 @@ const ChatInterface = ({
     </div>
   );
 
+  // Render organization search
+  const renderOrganizationSearch = () => {
+    const handleOrganizationSelect = (org) => {
+      setSelectedOrganization(org);
+      chatHandlers.handleChatResponse(org.short_name);
+      setOrganizationSearch('');
+    };
+
+    return (
+      <div className="mb-3">
+        <SearchField
+          placeholder="Search organizations by name..."
+          value={organizationSearch}
+          onChange={(value) => setOrganizationSearch(value)}
+          onSubmit={(value) => setOrganizationSearch(value)}
+          onClear={() => setOrganizationSearch('')}
+        />
+        {filteredOrganizations.length > 0 && (
+          <div className="mt-2 border rounded" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            {filteredOrganizations.map((org) => (
+              <Button
+                key={org.short_name}
+                variant="light"
+                className="w-100 text-left border-0 border-bottom"
+                style={{ textAlign: 'left', borderRadius: 0 }}
+                onClick={() => handleOrganizationSelect(org)}
+              >
+                <div>
+                  <strong>{org.short_name}</strong>
+                  {org.name && <div className="text-muted small">{org.name}</div>}
+                </div>
+              </Button>
+            ))}
+          </div>
+        )}
+        {organizationSearch && filteredOrganizations.length === 0 && (
+          <div className="text-muted small mt-2">No organizations found matching "{organizationSearch}"</div>
+        )}
+      </div>
+    );
+  };
+
   // Render text input
   const renderTextInput = (placeholder = "Type your message...") => {
     const handleInputChange = (e) => {
@@ -287,8 +346,8 @@ const ChatInterface = ({
       );
     }
 
-    const showAIDecideButton = !['document', 'components', 'assessmentTypes', 'pending-task'].includes(currentStep);
-    const showSkipButton = !['pending-task'].includes(currentStep);
+    const showAIDecideButton = !['document', 'components', 'assessmentTypes', 'pending-task', 'organization'].includes(currentStep);
+    const showSkipButton = !['pending-task', 'organization'].includes(currentStep);
 
     return (
       <Stack direction="horizontal" gap={2} className="flex-wrap">
@@ -338,6 +397,10 @@ const ChatInterface = ({
   // Determine input content based on current state
   const renderInputContent = () => {
     if (!shouldShowInput) return null;
+
+    if (currentStep === 'organization') {
+      return renderOrganizationSearch();
+    }
 
     if (currentStep === 'confirmation') {
       return renderTextInput("Anything else you want to add?");
@@ -397,6 +460,7 @@ ChatInterface.propTypes = {
   setCourseData: PropTypes.func,
   onFileUploadSuccess: PropTypes.func,
   onFileUploadError: PropTypes.func,
+  organizations: PropTypes.array,
 };
 
 export default ChatInterface;
