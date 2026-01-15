@@ -4,7 +4,8 @@ import 'regenerator-runtime/runtime';
 import {
   APP_INIT_ERROR, APP_READY, subscribe, initialize,
 } from '@edx/frontend-platform';
-import { AppProvider, ErrorPage } from '@edx/frontend-platform/react';
+import { ErrorPage } from '@edx/frontend-platform/react';
+import { AppProvider } from '@blend-ed/blendx-platform';
 import ReactDOM from 'react-dom';
 
 import Header from '@edx/frontend-component-header';

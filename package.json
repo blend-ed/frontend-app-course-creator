@@ -33,7 +33,7 @@
     "url": "https://github.com/openedx/frontend-app-course-creator/issues"
   },
   "dependencies": {
-    "@blend-ed/blendx-platform": "^3.2.34",
+    "@blend-ed/blendx-platform": "^3.2.55",
     "@blend-ed/blendx-ui": "^3.4.42",
     "@edx/brand": "npm:@edx/brand-openedx@1.2.0",
     "@edx/frontend-component-footer": "12.3.0",
